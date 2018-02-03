@@ -3,7 +3,8 @@ requirejs.config({
 
 	paths: {
 		"text": "../plugins/text",
-		"somelib": "../libs/somelib/"
+		"somelib": "../libs/somelib/",
+		"component": "../dummy/dummy-script"
 	},
 
 	packages: [{
