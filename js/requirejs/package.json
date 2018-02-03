@@ -1,0 +1,15 @@
+{
+  "name": "requirejs-playground",
+  "version": "1.0.0",
+  "description": "Playground for RequireJS tools",
+  "main": "require-resolver.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "esprima": "^4.0.0",
+    "requirejs": "^2.3.5"
+  }
+}
