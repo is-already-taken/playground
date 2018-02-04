@@ -114,6 +114,10 @@ function resolve(configFile, entryModule) {
 		// Entry module imports
 		moduleImports,
 		location,
+		locationParts,
+
+		pkgNameOrPathPfx,
+		suffix,
 
 		collectedModules = [];
 
@@ -148,16 +152,26 @@ function resolve(configFile, entryModule) {
 			continue;
 		}
 
-		// TODO split location by / and use the first component for the 
-		// lookups. if that component is found in packages, resolve 
-		// relative to its location
+		locationParts = location.split("/");
 
-		if (location in packages) {
+		// A (non-relative) location may be specified as a path too, in that
+		// case the first component refers either to the package name or to
+		// the path configuration
+		pkgNameOrPathPfx = locationParts[0];
+		suffix = locationParts.slice(1).join("/");
+
+		if (pkgNameOrPathPfx in packages) {
 			console.log("# - found in packages");
-			collectedModules.push(expand(packages[location].main));
-		} else if (location in config.paths) {
+			if (suffix === "") {
+				// Only the package name was specified, e.g. "foopackage"
+				collectedModules.push(expand(packages[pkgNameOrPathPfx].main));
+			} else {
+				// A package relative path was specified, e.g. "foopackage/bar"
+				collectedModules.push(expand(packages[pkgNameOrPathPfx].location, suffix));
+			}
+		} else if (pkgNameOrPathPfx in config.paths) {
 			console.log("# - found in paths");
-			collectedModules.push(expand(config.paths[location]));
+			collectedModules.push(expand(config.paths[pkgNameOrPathPfx], suffix));
 		} else {
 			console.log("# - assumed to be relative to " + relModulePath);
 			collectedModules.push(expand(location));
