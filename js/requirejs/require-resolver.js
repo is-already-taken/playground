@@ -97,7 +97,7 @@ function resolve(configFile, entryModule) {
 	 * 
 	 */
 
-	function expand(location, optional = "") {
+	function expandFromBase(location, optional = "") {
 		return path.resolve(baseUrl, location, optional);
 	}
 
@@ -151,7 +151,7 @@ function resolve(configFile, entryModule) {
 
 			// FIXME: wrong! it's relative to the current module's dirname()
 			console.log("# - is relative, expand to " + relModulePath);
-			collectedModules.push(expand(location));
+			collectedModules.push(expandFromBase(location));
 			continue;
 		}
 
@@ -167,17 +167,17 @@ function resolve(configFile, entryModule) {
 			console.log("# - found in packages");
 			if (suffix === "") {
 				// Only the package name was specified, e.g. "foopackage"
-				collectedModules.push(expand(packages[pkgNameOrPathPfx].main));
+				collectedModules.push(expandFromBase(packages[pkgNameOrPathPfx].main));
 			} else {
 				// A package relative path was specified, e.g. "foopackage/bar"
-				collectedModules.push(expand(packages[pkgNameOrPathPfx].location, suffix));
+				collectedModules.push(expandFromBase(packages[pkgNameOrPathPfx].location, suffix));
 			}
 		} else if (pkgNameOrPathPfx in config.paths) {
 			console.log("# - found in paths");
-			collectedModules.push(expand(config.paths[pkgNameOrPathPfx], suffix));
+			collectedModules.push(expandFromBase(config.paths[pkgNameOrPathPfx], suffix));
 		} else {
 			console.log("# - assumed to be relative to " + relModulePath);
-			collectedModules.push(expand(location));
+			collectedModules.push(expandFromBase(location));
 		}
 	}
 
