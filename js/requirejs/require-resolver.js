@@ -147,6 +147,9 @@ function resolve(configFile, entryModule) {
 		console.log("# resolving location " + location);
 
 		if (isRelative(location)) {
+			// Handling locations like "./foo" or "../foo"
+
+			// FIXME: wrong! it's relative to the current module's dirname()
 			console.log("# - is relative, expand to " + relModulePath);
 			collectedModules.push(expand(location));
 			continue;
