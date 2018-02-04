@@ -97,8 +97,8 @@ function resolve(configFile, entryModule) {
 	 * 
 	 */
 
-	function expand(location) {
-		return path.resolve(baseUrl, location);
+	function expand(location, optional = "") {
+		return path.resolve(baseUrl, location, optional);
 	}
 
 	const cwd = path.dirname(__dirname);
