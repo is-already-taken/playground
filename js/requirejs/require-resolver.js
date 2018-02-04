@@ -101,6 +101,10 @@ function resolve(configFile, entryModule) {
 		return path.resolve(baseUrl, location, optional);
 	}
 
+	function expandFromEntry(location) {
+		return path.resolve(relModulePath, location);
+	}
+
 	const cwd = path.dirname(__dirname);
 
 	let relModulePath = path.dirname(entryModule),
@@ -148,10 +152,8 @@ function resolve(configFile, entryModule) {
 
 		if (isRelative(location)) {
 			// Handling locations like "./foo" or "../foo"
-
-			// FIXME: wrong! it's relative to the current module's dirname()
 			console.log("# - is relative, expand to " + relModulePath);
-			collectedModules.push(expandFromBase(location));
+			collectedModules.push(expandFromEntry(location));
 			continue;
 		}
 
