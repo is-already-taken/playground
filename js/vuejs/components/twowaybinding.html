@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+	<div id="app"></div>
+
+	<script type="text/javascript" src="https://raw.githubusercontent.com/vuejs/vue/v2.5.21/dist/vue.min.js"></script>
+	<script type="text/javascript">
+		/* Example component with two-way binding logging Vuejs warning 
+		 * messages.
+		 *
+		 */
+
+		Vue.component('mycomponent', {
+			props: [
+				// Receive "value" from parent component
+				"value"
+			],
+
+			methods: {
+				updateValue: function(event) {
+					// Causes:
+					// 
+					// "Avoid mutating a prop directly since the value will
+					//  be overwritten whenever the parent component 
+					//  re-renders."
+					//
+					// (https://vuejs.org/v2/guide/components-props.html#One-Way-Data-Flow)
+					// (https://stackoverflow.com/questions/46383657/)
+					this.value = event.target.value;
+					// "input" conforms to the implicit naming "v-model" uses
+					this.$emit("input", this.value);
+				}		
+			},
+
+			template: `
+				<div>
+					<div>
+						<label>Fullname</label>
+						<input
+							type="text"
+							v-bind:value="value"
+							v-on:input="updateValue"
+						>
+					</div>
+				</div>
+				`
+		});
+
+		var app = new Vue({
+			el: '#app',
+			template: `
+				<form @submit="onSubmit">
+					<p>
+						<div>Component editor:</div>
+						<!--
+						<mycomponent
+							v-bind:value="fullname"
+							v-on:input="onMyComponentInput($event)"
+						/>
+						-->
+						<mycomponent v-model="fullname" />
+					</p>
+					<hr>
+					<p>
+						<label for="fullname">Fullname (read from component)</label>
+						<input v-model="fullname" type="text" readonly disabled />
+					</p>
+					<p>
+						<label for="fullname">Fullname (read from component)</label>
+						<input v-model="fullname" type="text" />
+					</p>
+					<p>
+						<div><span>Fullname:</span> {{ fullname }}</div>
+					</p>
+					<p>
+						<button v-on:click="onClick">Reset fullname</button>
+					</p>
+				</form>
+			`,
+			data: {
+				fullname: "foo bar"
+			},
+			methods:{
+				onMyComponentInput: function(value) {
+					this.fullname = value;
+				},
+				onClick: function() {
+					this.fullname = "xxxx yyyy";
+				},
+				onSubmit: function(e) {
+					e.preventDefault();
+				}
+			}
+		})
+	</script>
+</body>
+</html>

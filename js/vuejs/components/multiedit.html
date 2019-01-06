@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+	<div id="app"></div>
+
+	<script type="text/javascript" src="https://raw.githubusercontent.com/vuejs/vue/v2.5.21/dist/vue.min.js"></script>
+	<script type="text/javascript">
+		/**
+		 * Forename/lastname input pair.
+		 * @event "input" with the full name as string
+		 */
+		Vue.component('namepair', {
+			data: function() {
+				return {
+					forename: "",
+					lastname: ""
+				};
+			},
+
+			methods: {
+				// Internally handle state change to update the property
+				setValue: function(value) {
+					const parts = value.split(" ");
+					[this.forename, this.lastname] = parts;
+				},
+
+				$_updateForename: function(event) {
+					this.forename = event.target.value;
+					// "input" conforms to the implicit naming "v-model" uses
+					this.$emit("input", this.value);
+				},
+				$_updateLastname: function(event) {
+					this.lastname = event.target.value;
+					// "input" conforms to the implicit naming "v-model" uses
+					this.$emit("input", this.value);
+				}
+			},
+
+			computed: {
+				value: function() {
+					return [this.forename, this.lastname].join(" ");
+				}
+			},
+
+			template: `
+				<div>
+					<div>
+						<label>Forename</label>
+						<input
+							type="text"
+							v-bind:value="forename"
+							v-on:input="$_updateForename"
+						>
+					</div>
+					<div>
+						<label>Lastname</label>
+						<input
+							type="text"
+							v-bind:value="lastname"
+							v-on:input="$_updateLastname"
+						>
+					</div>
+				</div>
+				`
+		});
+
+		var app = new Vue({
+			el: '#app',
+			/* 
+			 * v-model - listen for the "input" (v-on:input) event and assign 
+			 *           the property "<v-model name>" from that component to
+			 *           this components object and vice versa.
+			 * 
+			 * See https://vuejs.org/v2/guide/components.html#Using-v-model-on-Components
+			 * 
+			 * <other-component
+			 *    v-bind:value="foo"
+			 *    v-on:input="foo = ..." />
+			 *
+			 * When "foo" changes _on this component_ update "value" to that
+			 * value on the other component.
+			 * 
+			 * When "input" is emitted _on the other component_ update "foo"
+			 * on this component.
+			 */
+			template: `
+				<form @submit="onSubmit">
+					<p>
+						<div>Component editor:</div>
+						<namepair
+							ref="fullname"
+							v-bind:fullname="fullname"
+							v-on:input="fullname = $event"
+						/>
+					</p>
+					<hr>
+					<p>
+						<label>Fullname (read from component)</label>
+						<input v-model="fullname" type="text" disabled readonly />
+					</p>
+					<p>
+						<label>Fullname (read from component)</label>
+						<input v-model="fullname" type="text" />
+					</p>
+					<p>
+						<button v-on:click="onResetClick">Reset fullname</button>
+					</p>
+				</form>
+			`,
+			data: {
+				fullname: "foo bar",
+			},
+			computed: {
+				furtherCombined: function() {
+					console.log(this.name, this.fullname);
+					return [this.name, this.fullname].join(" ");
+				}
+			},
+			watch: {
+				fullname: function(val) {
+					// this.$children[0].setValue(val);
+					this.$refs.fullname.setValue(val);
+				}
+			},
+			methods:{
+				onResetClick: function() {
+					this.fullname = "foo bar";
+				},
+
+				onSubmit: function(e) {
+					e.preventDefault();
+				}
+			}
+		})
+	</script>
+</body>
+</html>

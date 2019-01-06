@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+	<div id="app"></div>
+
+	<script type="text/javascript" src="https://raw.githubusercontent.com/vuejs/vue/v2.5.21/dist/vue.min.js"></script>
+	<script type="text/javascript">
+		/* Example component with two-way binding logging Vuejs warning 
+		 * messages.
+		 *
+		 */
+
+		Vue.component('mycomponent', {
+			data: function() {
+				return {
+					// "Declare" property
+					value: ""
+				}
+			},
+
+			methods: {
+				// Internally handle state change to update the property
+				$_updateValue: function(event) {
+					this.value = event.target.value;
+					// "input" conforms to the implicit naming "v-model" uses
+					this.$emit("input", this.value);
+				},
+
+				/** Update internal value from outside
+				  */
+				setValue: function(value) {
+					this.value = value;
+				}	
+			},
+
+			template: `
+				<div>
+					<div>
+						<label>Fullname</label>
+						<input
+							type="text"
+							v-bind:value="value"
+							v-on:input="$_updateValue"
+						>
+					</div>
+				</div>
+				`
+		});
+
+		var app = new Vue({
+			el: '#app',
+			template: `
+				<form @submit="onSubmit">
+					<p>
+						<div>Component editor:</div>
+  						<mycomponent
+  							ref="mycomponent1"
+  							v-bind:value="fullnameFromComponent"
+  							v-on:input="onMyComponentInput($event)"
+  						/>
+					</p>
+					<hr>
+					<p>
+						<label>Fullname (read from component)</label>
+						<input v-model="fullname" type="text" />
+					</p>
+					<p>
+						<label>Fullname (read from component)</label>
+						<input v-model="fullname" type="text" readonly disabled />
+					</p>
+					<p>
+						<button v-on:click="onClick">Reset fullname</button>
+					</p>
+				</form>
+			`,
+			data: {
+				fullnameFromComponent: "",
+				fullname: "foo bar"
+			},
+			computed: {
+				furtherCombined: function() {
+					return [this.fullname].join(" ");
+				}
+			},
+			watch: {
+				fullname: function(val) {
+					// this.$children[0].setValue(val);
+					this.$refs.mycomponent1.setValue(val);
+				}
+			},
+			methods:{
+				onMyComponentInput: function(value) {
+					this.fullname = this.fullnameFromComponent = value;
+				},
+				onClick: function() {
+					this.fullname = "xxxx yyyy";
+				},
+				onSubmit: function(e) {
+					e.preventDefault();
+				}
+			}
+		})
+	</script>
+</body>
+</html>
