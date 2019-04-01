@@ -74,27 +74,17 @@ function dragMarker(locationIndex, markerDragEvent) {
 	}
 }
 
-// Segment clicked: add a new maker and split the segment
-function segmentClick(segmentIndex, evt) {
-	let clickedLocation = [evt.latlng.lat, evt.latlng.lng],
-		marker,
-		newPathIndex = segmentIndex + 1,
-		segment,
-		preceedingSegment,
-		draggedIndex;
-
-	path.splice(newPathIndex, 0, clickedLocation);
-
-	// path     = [a,b,c,d,e]
-	// segments = [[a,b], [b,c], [c,d], [d,e]]
-	// 
-	// Say segment #1 (b,c) was clicked. Path index for splicing will
-	// be 2. Beside adding the new, spliced segment we've to update 
-	// segment #1 and #3 *afterwards*.
+/**
+ * Add marker to map for the specified location and register event handlers
+ */
+function createMarker(location) {
+		// State variable for dragstart => drag
+	let draggedIndex,
+		marker;
 
 	// Add marker where clicked
 	marker = L.marker(
-		clickedLocation,
+		location,
 		{ draggable: true }
 	).addTo(map);
 
@@ -105,9 +95,30 @@ function segmentClick(segmentIndex, evt) {
 		]);
 		console.log("start dragging index", draggedIndex);
 	});
+
 	marker.on("drag", (evt) => {
 		dragMarker(draggedIndex, evt);
 	});
+}
+
+// Segment clicked: add a new maker and split the segment
+function segmentClick(segmentIndex, evt) {
+	let clickedLocation = [evt.latlng.lat, evt.latlng.lng],
+		newPathIndex = segmentIndex + 1,
+		segment,
+		preceedingSegment;
+
+	path.splice(newPathIndex, 0, clickedLocation);
+
+	// path     = [a,b,c,d,e]
+	// segments = [[a,b], [b,c], [c,d], [d,e]]
+	//
+	// Say segment #1 (b,c) was clicked. Path index for splicing will
+	// be 2. Beside adding the new, spliced segment we've to update
+	// segment #1 and #3 *afterwards*.
+
+	// Add marker where clicked
+	createMarker(clickedLocation);
 
 	segment = L.polyline(
 		path.slice(newPathIndex, newPathIndex + 2),
@@ -147,30 +158,14 @@ function segmentClick(segmentIndex, evt) {
 map.on("click", (evt) => {
 	let clickedLocation = [evt.latlng.lat, evt.latlng.lng],
 		lastLocation,
-		marker,
-		segment,
-		draggedIndex;
+		segment;
 
 	console.log("clicked map: ", evt.latlng, evt);
 
 	path.push(clickedLocation);
 
 	// Add marker where clicked
-	marker = L.marker(
-		clickedLocation,
-		{ draggable: true }
-	).addTo(map);
-
-	marker.on("dragstart", (dragStartEvt) => {
-		draggedIndex = findLocationIndex([
-			dragStartEvt.target.getLatLng().lat,
-			dragStartEvt.target.getLatLng().lng
-		]);
-		console.log("start dragging index", draggedIndex);
-	});
-	marker.on("drag", (evt) => {
-		dragMarker(draggedIndex, evt);
-	});
+	createMarker(clickedLocation);
 
 	// We need at least two locations to create a segment
 	if (path.length >= 2) {
