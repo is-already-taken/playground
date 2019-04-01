@@ -160,7 +160,7 @@ function segmentClick(segmentIndex, evt) {
 	// current segment index.
 
 	preceedingSegment = segments[segmentIndex];
-	preceedingSegment.setLatLngs(path.slice(newPathIndex - 1, newPathIndex + 1));
+	preceedingSegment.setLatLngs(path.slice(segmentIndex, segmentIndex + 2));
 }
 
 
