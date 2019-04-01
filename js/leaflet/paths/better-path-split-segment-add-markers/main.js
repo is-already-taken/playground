@@ -83,6 +83,8 @@ function segmentClick(segmentIndex, evt) {
 		preceedingSegment,
 		draggedIndex;
 
+	path.splice(newPathIndex, 0, clickedLocation);
+
 	// path     = [a,b,c,d,e]
 	// segments = [[a,b], [b,c], [c,d], [d,e]]
 	// 
@@ -106,8 +108,6 @@ function segmentClick(segmentIndex, evt) {
 	marker.on("drag", (evt) => {
 		dragMarker(draggedIndex, evt);
 	});
-
-	path.splice(newPathIndex, 0, clickedLocation);
 
 	segment = L.polyline(
 		path.slice(newPathIndex, newPathIndex + 2),
