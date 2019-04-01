@@ -144,7 +144,7 @@ function segmentClick(segmentIndex, evt) {
 	// Add marker where clicked
 	createMarker(clickedLocation);
 
-	createSegment(path.slice(newPathIndex, newPathIndex + 2), segmentIndex + 1);
+	createSegment(path.slice(newPathIndex, newPathIndex + 2), newPathIndex);
 
 	// Now for segmentIndex = 1 we've
 	// path     = [a,b,N,c,d,e]
