@@ -101,11 +101,35 @@ function createMarker(location) {
 	});
 }
 
+/**
+ * Add segment to the map for the specified location pair and new index
+ */
+function createSegment(locationPair, insertionIndex) {
+	let segment;
+
+	segment = L.polyline(
+		locationPair,
+		{
+			color: "#0000ff",
+			bubblingMouseEvents: false
+		}
+	).addTo(map);
+
+	// Insert new segment after the clicked one
+	// We now have to edit the segment at the current index
+	segments.splice(insertionIndex, 0, segment);
+
+	segment.on("click", (evt) => {
+		// Using indexOf() because when new segments get inserted later,
+		// the index would be stale
+		segmentClick(segments.indexOf(segment), evt);
+	});
+}
+
 // Segment clicked: add a new maker and split the segment
 function segmentClick(segmentIndex, evt) {
 	let clickedLocation = [evt.latlng.lat, evt.latlng.lng],
 		newPathIndex = segmentIndex + 1,
-		segment,
 		preceedingSegment;
 
 	path.splice(newPathIndex, 0, clickedLocation);
@@ -120,21 +144,7 @@ function segmentClick(segmentIndex, evt) {
 	// Add marker where clicked
 	createMarker(clickedLocation);
 
-	segment = L.polyline(
-		path.slice(newPathIndex, newPathIndex + 2),
-		{
-			color: "#0000ff",
-			bubblingMouseEvents: false
-		}
-	).addTo(map);
-	
-	// Insert new segment after the clicked one
-	// We now have to edit the segment at the current index
-	segments.splice(segmentIndex + 1, 0, segment);
-
-	segment.on("click", (evt) => {
-		segmentClick(segments.indexOf(segment), evt);
-	});
+	createSegment(path.slice(newPathIndex, newPathIndex + 2), segmentIndex + 1);
 
 	// Now for segmentIndex = 1 we've
 	// path     = [a,b,N,c,d,e]
@@ -157,8 +167,7 @@ function segmentClick(segmentIndex, evt) {
 // Handle click on map to add maker and extend the path
 map.on("click", (evt) => {
 	let clickedLocation = [evt.latlng.lat, evt.latlng.lng],
-		lastLocation,
-		segment;
+		lastLocation;
 
 	console.log("clicked map: ", evt.latlng, evt);
 
@@ -172,18 +181,6 @@ map.on("click", (evt) => {
 		console.log("Segment incomplete. Complete it now...");
 		// So complete it now ...
 
-		segment = L.polyline(
-			path.slice(path.length - 2, path.length),
-			{
-				color: "#0000ff",
-				bubblingMouseEvents: false
-			}
-		).addTo(map);
-		
-		segments.push(segment);
-
-		segment.on("click", (evt) => {
-			segmentClick(segments.indexOf(segment), evt);
-		});
+		createSegment(path.slice(path.length - 2, path.length), segments.length);
 	}
 });
