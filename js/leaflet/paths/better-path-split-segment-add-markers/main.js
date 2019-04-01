@@ -119,18 +119,14 @@ function createSegment(locationPair, insertionIndex) {
 	// We now have to edit the segment at the current index
 	segments.splice(insertionIndex, 0, segment);
 
-	segment.on("click", (evt) => {
-		// Using indexOf() because when new segments get inserted later,
-		// the index would be stale
-		segmentClick(segments.indexOf(segment), evt);
-	});
+	segment.on("click", segmentClick.bind(null, segment));
 }
 
 // Segment clicked: add a new maker and split the segment
-function segmentClick(segmentIndex, evt) {
+function segmentClick(segment, evt) {
 	let clickedLocation = [evt.latlng.lat, evt.latlng.lng],
-		newPathIndex = segmentIndex + 1,
-		preceedingSegment;
+		segmentIndex = segments.indexOf(segment),
+		newPathIndex = segmentIndex + 1;
 
 	path.splice(newPathIndex, 0, clickedLocation);
 
@@ -159,8 +155,7 @@ function segmentClick(segmentIndex, evt) {
 	// moved left and used the succeeding location. Update the 
 	// current segment index.
 
-	preceedingSegment = segments[segmentIndex];
-	preceedingSegment.setLatLngs(path.slice(segmentIndex, segmentIndex + 2));
+	segment.setLatLngs(path.slice(segmentIndex, segmentIndex + 2));
 }
 
 
