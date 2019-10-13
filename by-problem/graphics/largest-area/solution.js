@@ -67,7 +67,8 @@ function findContiguousArea(data) {
 				continue;
 			}
 
-			area = traceContiguousArea(x, y, seen);
+			area = [];
+			recurseContiguousArea(x, y, seen, area);
 			contiguousAreas.push([value, area]);
 		}
 	}
@@ -97,12 +98,6 @@ function findContiguousArea(data) {
 
 	return area;
 
-	function traceContiguousArea(x, y, seen) {
-		const area = [];
-		recurseContiguousArea(x, y, seen, area);
-		return area;
-	}
-	
 	function recurseContiguousArea(x, y, seen, area) {
 		const value = data[y][x];
 		const combinations = [];
