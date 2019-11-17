@@ -24,15 +24,15 @@ public class Shapeextraction {
 
 	// Gamma correct input image to improve contrast
 	// Higher is better - 1.2 is not enough, 1.5 is good
-	private static final double GAMMA = 1.3;
+	private static final double GAMMA = 1.8;
 
 	// Blur image to extend shape bounding boxes
 	// 5x5 produces fairly good results for most cards
-	private static final Size BLUR_KERNEL = new Size(new double[] { 7, 7 });
+	private static final Size BLUR_KERNEL = new Size(new double[] { 5, 5 });
 
 	// Discard noise, pick blurred values towards the high-key side
 	// Lower is better. 245 looks good
-	private static final int THRESHOLD = 240;
+	private static final int THRESHOLD = 230;
 
 	// Bounding box padding
 	private static final int PADDING = 1;

@@ -18,7 +18,7 @@ public class ShapeDetection {
 
 	// The threshold strongly determines how well the 
 	// shape is "carved" out
-	private static final int THRESHOLD = 240;
+	private static final int THRESHOLD = 210;
 
 	/**
 	 * Process card image to get shape.
@@ -49,7 +49,7 @@ public class ShapeDetection {
 
 		if (numberOfPoints < 20) {
 			return Shape.diamond;
-		} else if (numberOfPoints < 40) {
+		} else if (numberOfPoints < 45) {
 			return Shape.oval;
 		} else if (numberOfPoints < 60) {
 			return Shape.sigmoid;
