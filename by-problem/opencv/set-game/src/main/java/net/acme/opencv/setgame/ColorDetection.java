@@ -21,9 +21,11 @@ public class ColorDetection {
 	 * @return color
 	 */
 	public static Color process(Mat image, Rect location) {
-		Histogram blueHistogram = Histogram.generate(image, 0);
-		Histogram greenHistogram = Histogram.generate(image, 1);
-		Histogram redHistogram = Histogram.generate(image, 2);
+		Mat shapeImage = image.submat(location);
+
+		Histogram blueHistogram = Histogram.generate(shapeImage, 0);
+		Histogram greenHistogram = Histogram.generate(shapeImage, 1);
+		Histogram redHistogram = Histogram.generate(shapeImage, 2);
 
 		// Pair color-index with the corresponding average value
 		int[][] rgb = new int[][] {
