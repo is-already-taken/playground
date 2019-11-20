@@ -13,6 +13,7 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import net.acme.opencv.setgame.utils.Correction;
+import net.acme.opencv.setgame.utils.Histogram;
 
 /**
  * Receives an image of a card and extracts the interesting area with the
@@ -24,15 +25,14 @@ public class Shapeextraction {
 
 	// Gamma correct input image to improve contrast
 	// Higher is better - 1.2 is not enough, 1.5 is good
-	private static final double GAMMA = 1.8;
+	private static final double GAMMA = 1.6;
 
 	// Blur image to extend shape bounding boxes
 	// 5x5 produces fairly good results for most cards
-	private static final Size BLUR_KERNEL = new Size(new double[] { 5, 5 });
+	private static final Size BLUR_KERNEL = new Size(new double[] { 3, 3 });
 
-	// Discard noise, pick blurred values towards the high-key side
-	// Lower is better. 245 looks good
-	private static final int THRESHOLD = 230;
+	// When determining the modes of the histogram require this distance.
+	private static final int MODE_DISTANCE = 20;
 
 	// Bounding box padding
 	private static final int PADDING = 1;
@@ -54,6 +54,9 @@ public class Shapeextraction {
 			image.rows() - (2 * SHRINK));
 		Mat subimg = image.submat(crop);
 		Mat blurred = new Mat();
+		Histogram hist;
+		List<Integer> modes;
+		int threshold;
 		Mat threshed = new Mat();
 		Mat edges = new Mat();
 		Mat hierarchy = new Mat();
@@ -62,7 +65,20 @@ public class Shapeextraction {
 		subimg = Correction.gamma(subimg, GAMMA);
 
 		Imgproc.blur(subimg, blurred, BLUR_KERNEL);
-		Imgproc.threshold(blurred, threshed, THRESHOLD, 255, Imgproc.THRESH_BINARY);
+
+		hist = Histogram.generate(blurred);
+		modes = hist.modes(MODE_DISTANCE, 2);
+
+		if (modes.size() != 2) {
+			throw new RuntimeException("Not enough modes detected in histogram");
+		}
+
+		// Calculate the valley between both modes - this sets out threshold
+		// since lower values contribute to the shape, higher values
+		// contribute to the card.
+		threshold = (modes.get(1) + (modes.get(0) - modes.get(1)) / 2);
+
+		Imgproc.threshold(blurred, threshed, threshold, 255, Imgproc.THRESH_BINARY);
 
 		// A second pass blur + threshold with 3x3 and 220 was initially
 		// implemented. It was removed though, since, during development,
