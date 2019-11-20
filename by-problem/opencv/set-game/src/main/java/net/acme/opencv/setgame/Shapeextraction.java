@@ -93,7 +93,7 @@ public class Shapeextraction {
 			.stream()
 			.map((matOfPt) -> Imgproc.boundingRect(matOfPt))
 			// Remove rects that are proportionally too small
-			.filter((rect) -> (rect.width * rect.height) > (cardSize * MIN_CARD_SCALE_FACTOR))
+			.filter((rect) -> (rect.width * rect.height) >= (cardSize * MIN_CARD_SCALE_FACTOR))
 			.collect(Collectors.toList());
 
 		rects = normalizeRects(rects);
