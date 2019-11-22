@@ -1,24 +1,36 @@
 package net.acme.opencv.setgame;
 
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
-import org.opencv.core.Size;
+import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
+
+import net.acme.opencv.setgame.utils.Histogram;
+import net.acme.opencv.setgame.utils.Similarity;
 
 /**
  * Detect shape
  */
 public class ShapeDetection {
-	// Blur shape to smooth edges
-	private static final Size BLUR_KERNEL = new Size(new double[] { 3, 3 });
+	// Shape similarity parameters
+	static List<ShapeParam> PARAMETERS = new ArrayList<>();
 
-	// The threshold strongly determines how well the 
-	// shape is "carved" out
-	private static final int THRESHOLD = 210;
+	static {
+		PARAMETERS.add(new ShapeParam(Shape.oval, 0.962, 0.792));
+		PARAMETERS.add(new ShapeParam(Shape.sigmoid, 0.886, 0.742));
+		PARAMETERS.add(new ShapeParam(Shape.diamond, 0.962, 0.555));
+	}
+
+	// Max accepted deviation from the specified parameters.
+	static double EPSILON = 0.07;
 
 	/**
 	 * Process card image to get shape.
@@ -29,15 +41,26 @@ public class ShapeDetection {
 	 */
 	public static Shape process(Mat image, Rect location) {
 		Mat shapeImage = image.submat(location);
+		Histogram histogram;
+		List<Integer> modes;
+		int threshold;
 		Mat edges = new Mat();
-		Mat blurred = new Mat();
 		Mat threshed = new Mat();
 		Mat hierarchy = new Mat();
 		List<MatOfPoint> contours = new ArrayList<>();
-		int numberOfPoints;
+		double extent;
+		double solidity;
 
-		Imgproc.blur(shapeImage, blurred, BLUR_KERNEL);
-		Imgproc.threshold(blurred, threshed, THRESHOLD, 255, Imgproc.THRESH_BINARY);
+		histogram = Histogram.generate(shapeImage, 0);
+		modes = histogram.modes(20, 2);
+
+		// Calculate the valley between both modes - this sets out threshold
+		// since lower values contribute to the shape, higher values
+		// contribute to the card.
+		threshold = (modes.get(1) + (modes.get(0) - modes.get(1)) / 2);
+
+		Imgproc.threshold(shapeImage, threshed, threshold, 255, Imgproc.THRESH_BINARY);
+		Imgproc.floodFill(threshed, new Mat(), new Point(location.width / 2, location.height / 2), new Scalar(0, 0, 0));
 		Imgproc.Canny(threshed, edges, 0, 255, 3);
 		Imgproc.findContours(edges, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
@@ -45,17 +68,45 @@ public class ShapeDetection {
 			return null;
 		}
 
-		numberOfPoints = contours.get(0).rows();
+		extent = Similarity.extent(contours.get(0));
+		solidity = Similarity.solidity(contours.get(0));
 
-		if (numberOfPoints < 20) {
-			return Shape.diamond;
-		} else if (numberOfPoints < 45) {
-			return Shape.oval;
-		} else if (numberOfPoints < 60) {
-			return Shape.sigmoid;
+		return findBestMatch(extent, solidity);
+	}
+
+	/**
+	 * Match passed extent and solidity against calibrated parameters.
+	 */
+	private static Shape findBestMatch(double extent, double solidity) {
+		List<AbstractMap.SimpleEntry<Double, Shape>> matchedShapes = new ArrayList<>();
+
+		for (ShapeParam param : PARAMETERS) {
+			double extentDeviation = param.extent - extent;
+			double solidityDeviation = param.solidity - solidity;
+
+			boolean extentWithinEpsilon = extentDeviation < EPSILON;
+			boolean solidityWithinEpsilon = solidityDeviation < EPSILON;
+
+			if (extentWithinEpsilon && solidityWithinEpsilon) {
+				matchedShapes.add(new AbstractMap.SimpleEntry<Double, Shape>(
+					extentDeviation * solidityDeviation,
+					param.shape));
+			}
 		}
 
-		return null;
+		if (matchedShapes.size() == 0) {
+			return null;
+		}
+
+		// Multiple shapes might be within EPSILON, pick the best match
+		matchedShapes.sort(new Comparator<AbstractMap.SimpleEntry<Double, Shape>>() {
+			@Override
+			public int compare(SimpleEntry<Double, Shape> o1, SimpleEntry<Double, Shape> o2) {
+				return (o1.getKey() < o2.getKey()) ? -1 : (o1.getKey() > o2.getKey() ? 1 : 0);
+			}
+		});
+
+		return matchedShapes.get(0).getValue();
 	}
 
 	/**
@@ -63,5 +114,22 @@ public class ShapeDetection {
 	 */
 	public static enum Shape {
 		diamond, oval, sigmoid
+	}
+
+	/**
+	 * Similarity parameters.
+	 * See
+	 * https://docs.opencv.org/master/d1/d32/tutorial_py_contour_properties.html
+	 */
+	static class ShapeParam {
+		double solidity;
+		double extent;
+		Shape shape;
+
+		public ShapeParam(Shape shape, double solidity, double extent) {
+			this.solidity = solidity;
+			this.extent = extent;
+			this.shape = shape;
+		}
 	}
 }
