@@ -32,7 +32,7 @@ public class Shapeextraction {
 	private static final Size BLUR_KERNEL = new Size(new double[] { 3, 3 });
 
 	// When determining the modes of the histogram require this distance.
-	private static final int MODE_DISTANCE = 20;
+	private static final int MODE_DISTANCE = 30;
 
 	// Bounding box padding
 	private static final int PADDING = 3;
