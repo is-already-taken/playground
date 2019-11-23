@@ -18,8 +18,8 @@ public class FillDetection {
 	// Blur image to get average value of the shape content
 	private static final Size BLUR_KERNEL = new Size(new double[] { 4, 4 });
 
-	// Value ranges from high-, mid-, to low-key
-	private static final int[][] VALUE_RANGES = new int[][] { { 230, 255 }, { 160, 229 }, { 0, 159 } };
+	private static final int EMPTY_MAX_DIFFERENCE = 10;
+	private static final int PATTERN_MAX_DIFFERENCE = 75;
 
 	/**
 	 * Process card image to get shape.
@@ -29,38 +29,51 @@ public class FillDetection {
 	 * @return fill
 	 */
 	public static Fill process(Mat image, Rect location) {
-		Rect probe = new Rect(
+		Rect insideProbe = new Rect(
 			// Center
 			location.x + Math.round(location.width / 2) - (PROBE_SIZE / 2),
 			location.y + Math.round(location.height / 2) - (PROBE_SIZE / 2),
 			PROBE_SIZE,
 			PROBE_SIZE);
-		Mat shapeImage = image.submat(probe);
+		Rect outsideProbe = new Rect(
+			// Center
+			location.x + location.width - PROBE_SIZE,
+			location.y + 0,
+			PROBE_SIZE,
+			PROBE_SIZE);
+		Mat insideImage = image.submat(insideProbe);
+		Mat outsideImage = image.submat(outsideProbe);
 		Mat blurred = new Mat();
-		int[] range;
-		int average;
-		int rangeIndex;
+		int insideAverage;
+		int outsideAverage;
+		int difference;
 
-		// Determine fill by average value. An empty shape must be high-key,
-		// because the content is white. A filled shape must be low-key
-		// because the content is not white. A pattern, after blurring 
-		// produces a mid-key image because white pixels and pattern
-		// pixels are mixed together.
+		// Determine fill by comparing the average values of areas
+		// outside the shape and inside the shape. The shape inside
+		// is blurred to limit modes. The inside and outside average
+		// values are then compared.
 
-		Imgproc.blur(shapeImage, blurred, BLUR_KERNEL);
+		Imgproc.blur(insideImage, blurred, BLUR_KERNEL);
+		insideImage = blurred;
 
-		Histogram probeHist = Histogram.generate(blurred);
-		average = probeHist.average();
+		blurred = new Mat();
+		Imgproc.blur(outsideImage, blurred, BLUR_KERNEL);
+		outsideImage = blurred;
 
-		for (rangeIndex = 0; rangeIndex < VALUE_RANGES.length; rangeIndex++) {
-			range = VALUE_RANGES[rangeIndex];
+		insideAverage = Histogram.generate(insideImage).average();
+		outsideAverage = Histogram.generate(outsideImage).average();
 
-			if (average >= range[0] && average <= range[1]) {
-				return Fill.values()[rangeIndex];
-			}
+		difference = Math.abs(insideAverage - outsideAverage);
+
+		if (difference >= PATTERN_MAX_DIFFERENCE) {
+			return Fill.solid;
+		} else if (difference <= PATTERN_MAX_DIFFERENCE && difference > EMPTY_MAX_DIFFERENCE) {
+			return Fill.pattern;
+		} else if (difference < EMPTY_MAX_DIFFERENCE) {
+			return Fill.empty;
+		} else {
+			return null;
 		}
-
-		return null;
 	}
 
 	// Has to be in order of the average luminance value from 
