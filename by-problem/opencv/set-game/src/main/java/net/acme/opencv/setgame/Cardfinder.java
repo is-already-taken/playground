@@ -14,6 +14,9 @@ import net.acme.opencv.setgame.utils.Histogram;
  * Find cards in an image. Make basic plausibility checks on the boxes.
  */
 public class Cardfinder {
+	// Threshold to separate cards from background  
+	private static final int THRESHOLD = 200;
+
 	// Aspect ratio of a card
 	private static final double ASPECT_RATIO = 90 / 60;
 
@@ -36,12 +39,15 @@ public class Cardfinder {
 		List<Rect> cards = new ArrayList<>();
 		Histogram hist = Histogram.generate(image);
 		int averageValue = hist.average();
+		Mat threshed = new Mat();
 		Mat edges = new Mat();
 		List<MatOfPoint> contours = new ArrayList<>();
 		Mat hierarchy = new Mat();
 		Rect rect;
 
-		Imgproc.Canny(image, edges, averageValue * 0.66, averageValue * 1.66, 3);
+		Imgproc.threshold(image, threshed, THRESHOLD, 255, Imgproc.THRESH_BINARY);
+
+		Imgproc.Canny(threshed, edges, averageValue * 0.66, averageValue * 1.66, 3);
 
 		// Using RETR_EXTERNAL to limit to enclosing contours/boxes
 		Imgproc.findContours(edges, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
