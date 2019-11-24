@@ -17,13 +17,18 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import net.acme.opencv.setgame.utils.Histogram;
 import net.acme.opencv.setgame.utils.Similarity;
 
 /**
  * Detect shape
  */
 public class ShapeDetection {
+	// Threshold for the threshold function to separate the share
+	// from the card. Inspecting average value or modes was not
+	// reliable. The value was determined by looking at histograms
+	// of cards with low detection scores.
+	static int THRESHOLD = 180;
+
 	// Shape similarity parameters
 	static List<ShapeParam> PARAMETERS = new ArrayList<>();
 
@@ -45,9 +50,6 @@ public class ShapeDetection {
 	 */
 	public static Shape process(Mat image, Rect location) {
 		Mat shapeImage = image.submat(location);
-		Histogram histogram;
-		List<Integer> modes;
-		int threshold;
 		Mat edges = new Mat();
 		Mat threshed = new Mat();
 		Mat hierarchy = new Mat();
@@ -55,15 +57,7 @@ public class ShapeDetection {
 		double extent;
 		double solidity;
 
-		histogram = Histogram.generate(shapeImage, 0);
-		modes = histogram.modes(20, 2);
-
-		// Calculate the valley between both modes - this sets out threshold
-		// since lower values contribute to the shape, higher values
-		// contribute to the card.
-		threshold = (modes.get(1) + (modes.get(0) - modes.get(1)) / 2);
-
-		Imgproc.threshold(shapeImage, threshed, threshold, 255, Imgproc.THRESH_BINARY);
+		Imgproc.threshold(shapeImage, threshed, THRESHOLD, 255, Imgproc.THRESH_BINARY);
 		Imgproc.floodFill(threshed, new Mat(), new Point(location.width / 2, location.height / 2), new Scalar(0, 0, 0));
 		Imgproc.Canny(threshed, edges, 0, 255, 3);
 		Imgproc.findContours(edges, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
