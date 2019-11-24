@@ -39,7 +39,7 @@ public class ShapeDetection {
 	}
 
 	// Max accepted deviation from the specified parameters.
-	static double EPSILON = 0.07;
+	static double EPSILON = 0.1;
 
 	/**
 	 * Process card image to get shape.
