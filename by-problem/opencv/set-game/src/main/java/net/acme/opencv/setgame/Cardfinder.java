@@ -2,6 +2,7 @@ package net.acme.opencv.setgame;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -9,6 +10,8 @@ import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 
 import net.acme.opencv.setgame.utils.Histogram;
+import net.acme.opencv.setgame.utils.Lines;
+import net.acme.opencv.setgame.utils.Lines.Line;
 
 /**
  * Find cards in an image. Make basic plausibility checks on the boxes.
@@ -28,15 +31,22 @@ public class Cardfinder {
 	// Probing history: 0.03 too large for slightly skewed image
 	private static final double MAX_CARD_GRID_RATIO = 0.025;
 
+	// Parameters to find (horizontal) lines in a card to
+	// detect rotation. Determined by testing.
+	private static final int LINE_VOTES = 10;
+	private static final int LINE_MIN_LENGTH = 30;
+	private static final int LINE_MAX_GAP = 5;
+	private static final double LINE_MAX_HOR_ANGLE = 30;
+
 	/**
 	 * Process image to find cards.
 	 * 
 	 * @param image the input image in grayscale format
 	 * @return list of Rects of the card outlines
 	 */
-	public static List<Rect> process(Mat image) {
+	public static List<Card> process(Mat image) {
 		int imageSize = image.rows() * image.cols();
-		List<Rect> cards = new ArrayList<>();
+		List<Card> cards = new ArrayList<>();
 		Histogram hist = Histogram.generate(image);
 		int averageValue = hist.average();
 		Mat threshed = new Mat();
@@ -58,11 +68,23 @@ public class Cardfinder {
 
 			// boundingRects() may have returned duplicate Rects for one cards
 			if (isLikelyCard(rect, imageSize)) {
-				cards.add(rect);
+				Mat cardImage = edges.submat(rect);
+				List<Line> lines = Lines.byHoughP(cardImage, LINE_VOTES, LINE_MIN_LENGTH, LINE_MAX_GAP);
+				List<Line> linesOut = horizontals(lines, LINE_MAX_HOR_ANGLE);
+
+				if (!linesOut.isEmpty()) {
+					cards.add(new Card(rect, Lines.angle(linesOut.get(0))));
+				}
 			}
 		}
 
 		return cards;
+	}
+
+	private static List<Line> horizontals(List<Line> lines, double maxAngle) {
+		return lines.stream()
+			.filter((line) -> Math.abs(Lines.angle(line)) <= maxAngle)
+			.collect(Collectors.toList());
 	}
 
 	private static boolean isLikelyCard(Rect rect, int imageSize) {
@@ -79,5 +101,15 @@ public class Cardfinder {
 		boolean cardToGridRatioMatch = cardSize / imageSize >= MAX_CARD_GRID_RATIO;
 
 		return aspectRatioMatch && cardToGridRatioMatch;
+	}
+
+	public static class Card {
+		public Rect box;
+		public double rotation;
+
+		public Card(Rect box, double rotation) {
+			this.box = box;
+			this.rotation = rotation;
+		}
 	}
 }
