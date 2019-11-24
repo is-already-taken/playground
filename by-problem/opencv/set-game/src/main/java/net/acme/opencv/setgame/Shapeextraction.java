@@ -139,20 +139,16 @@ public class Shapeextraction {
 		// - smaller - one is not contained.
 		Collections.reverse(rects);
 
-		// Add largest rect, it's excluded by the loop
-		rectsFiltered.add(rects.get(0));
+		rectsFiltered.addAll(rects);
 
-		int outerIndex = -1;
-		int innerIndex;
+		for (Rect rect1 : rects) {
+			for (Rect rect2 : rects) {
+				if (rect1 == rect2) {
+					continue;
+				}
 
-		for (Rect largerRect : rects) {
-			outerIndex++;
-
-			for (innerIndex = outerIndex + 1; innerIndex < rects.size(); innerIndex++) {
-				Rect innerRect = rects.get(innerIndex);
-
-				if (!contained(innerRect, largerRect) && !rectsFiltered.contains(innerRect)) {
-					rectsFiltered.add(innerRect);
+				if (contained(rect1, rect2)) {
+					rectsFiltered.remove(rect1);
 				}
 			}
 		}
@@ -161,16 +157,20 @@ public class Shapeextraction {
 	}
 
 	/**
-	 * Test whether innerRect is contained in outerRect
+	 * Test whether rect2 is contained in rect1
 	 */
-	private static boolean contained(Rect outerRect, Rect innerRect) {
-		int x1 = outerRect.x;
-		int y1 = outerRect.y;
-		int x2 = outerRect.x + outerRect.width;
-		int y2 = outerRect.y + outerRect.height;
+	private static boolean contained(Rect rect1, Rect rect2) {
+		boolean rect2InRect1 = (pointInRect(rect2.x, rect2.y, rect1)
+			|| pointInRect(rect2.x + rect2.width, rect2.y + rect2.height, rect1));
+		boolean rect1InRect2 = (pointInRect(rect1.x, rect1.y, rect2)
+			|| pointInRect(rect1.x + rect1.width, rect1.y + rect1.height, rect2));
 
-		return (innerRect.x >= x1 && (innerRect.x + innerRect.width) <= x2)
-			&& (innerRect.y >= y1 && (innerRect.y + innerRect.height) <= y2);
+		return rect1InRect2 || rect2InRect1;
+	}
+
+	private static boolean pointInRect(int x, int y, Rect rect1) {
+		return (x >= rect1.x && x <= (rect1.x + rect1.width))
+			&& (y >= rect1.y && y <= (rect1.y + rect1.height));
 	}
 
 	/**
