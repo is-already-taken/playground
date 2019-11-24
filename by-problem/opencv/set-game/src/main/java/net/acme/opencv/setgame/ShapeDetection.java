@@ -106,7 +106,8 @@ public class ShapeDetection {
 
 			if (extentWithinEpsilon && solidityWithinEpsilon) {
 				matchedShapes.add(new AbstractMap.SimpleEntry<Double, Shape>(
-					extentDeviation * solidityDeviation,
+					// Use absolute value, we don't card in which direction we've deviated.
+					Math.abs(extentDeviation * solidityDeviation),
 					param.shape));
 			}
 		}
