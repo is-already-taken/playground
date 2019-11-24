@@ -3,8 +3,12 @@ package net.acme.opencv.setgame;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -68,8 +72,27 @@ public class ShapeDetection {
 			return null;
 		}
 
-		extent = Similarity.extent(contours.get(0));
-		solidity = Similarity.solidity(contours.get(0));
+
+		List<Map.Entry<MatOfPoint, Rect>> contoursByArea = contours.stream()
+			.collect(Collectors.toMap(Function.identity(), (c) -> Imgproc.boundingRect(c)))
+			.entrySet()
+			.stream()
+			.collect(Collectors.toList());
+
+		contoursByArea.sort(new Comparator<Map.Entry<MatOfPoint, Rect>>() {
+			@Override
+			public int compare(Map.Entry<MatOfPoint, Rect> o1, Map.Entry<MatOfPoint, Rect> o2) {
+				double area1 = o1.getValue().area();
+				double area2 = o2.getValue().area();
+
+				return (area1 < area2) ? -1 : (area1 > area2 ? 1 : 0);
+			}
+		});
+
+		Collections.reverse(contoursByArea);
+
+		extent = Similarity.extent(contoursByArea.get(0).getKey());
+		solidity = Similarity.solidity(contoursByArea.get(0).getKey());
 
 		return findBestMatch(extent, solidity);
 	}
