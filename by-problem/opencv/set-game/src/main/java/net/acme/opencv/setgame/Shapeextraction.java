@@ -35,7 +35,7 @@ public class Shapeextraction {
 	private static final int MODE_DISTANCE = 20;
 
 	// Bounding box padding
-	private static final int PADDING = 1;
+	private static final int PADDING = 3;
 
 	// Fraction of the card area that shall be considered as shape
 	private static final double MIN_CARD_SCALE_FACTOR = 0.1;
