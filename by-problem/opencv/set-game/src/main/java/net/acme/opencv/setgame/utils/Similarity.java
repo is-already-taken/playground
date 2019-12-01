@@ -45,7 +45,7 @@ public class Similarity {
 		return patternArea / patternHullArea;
 	}
 
-	private static MatOfPoint2f pickPoints(MatOfPoint points, MatOfInt indices) {
+	public static MatOfPoint2f pickPoints(MatOfPoint points, MatOfInt indices) {
 		Point[] pickedPoints = new Point[indices.rows()];
 		int newRow = 0;
 		for (int index : indices.toArray()) {
