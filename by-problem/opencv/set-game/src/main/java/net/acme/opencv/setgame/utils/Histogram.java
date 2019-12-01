@@ -99,7 +99,7 @@ public class Histogram {
 		modes.add(normalizedValues.get(0));
 		lastValue = normalizedValues.get(0);
 
-		while (modes.size() < grades || grade >= MAX_VALUE) {
+		while (modes.size() < grades && grade < MAX_VALUE) {
 			int value = normalizedValues.get(grade);
 
 			if (lastValue - value > minValueDistance) {
