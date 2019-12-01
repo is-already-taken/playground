@@ -37,4 +37,22 @@ public class Correction {
 
 		return processed;
 	}
+
+	public static Mat map(Mat image, int oldValue, int newValue) {
+		int values = 256;
+		Mat matrix = new Mat(values, 1, CvType.CV_8U);
+		Mat processed = new Mat();
+		int i;
+
+		// init with 1:1 mapping of input => output values
+		for (i = 0; i < values; i++) {
+			matrix.put(i, 0, i);
+		}
+
+		matrix.put(oldValue, 0, newValue);
+
+		Core.LUT(image, matrix, processed);
+
+		return processed;
+	}
 }
