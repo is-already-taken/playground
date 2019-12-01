@@ -11,12 +11,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import net.acme.opencv.setgame.debug.Image;
+import net.acme.opencv.setgame.utils.Contour;
 import net.acme.opencv.setgame.utils.Similarity;
 
 /**
@@ -34,6 +38,7 @@ public class ShapeDetection {
 
 	static {
 		PARAMETERS.add(new ShapeParam(Shape.oval, 0.962, 0.792));
+		// solidity=0.9601 extent=0.7703
 		PARAMETERS.add(new ShapeParam(Shape.sigmoid, 0.886, 0.742));
 		PARAMETERS.add(new ShapeParam(Shape.diamond, 0.962, 0.555));
 	}
@@ -59,13 +64,15 @@ public class ShapeDetection {
 
 		Imgproc.threshold(shapeImage, threshed, THRESHOLD, 255, Imgproc.THRESH_BINARY);
 		Imgproc.floodFill(threshed, new Mat(), new Point(location.width / 2, location.height / 2), new Scalar(0, 0, 0));
-		Imgproc.Canny(threshed, edges, 0, 255, 3);
+		Imgproc.Canny(threshed, edges, 0, 255, 7);
 		Imgproc.findContours(edges, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
 		if (contours.size() == 0) {
 			return null;
 		}
 
+		Mat debugImage = image.clone();
+		Image.writeDebugImage(debugImage, contours, false, "shape_det_contours_" + App.id);
 
 		List<Map.Entry<MatOfPoint, Rect>> contoursByArea = contours.stream()
 			.collect(Collectors.toMap(Function.identity(), (c) -> Imgproc.boundingRect(c)))
@@ -84,11 +91,41 @@ public class ShapeDetection {
 		});
 
 		Collections.reverse(contoursByArea);
+		System.out.println(Contour.toList(contoursByArea.get(0).getKey()).stream()
+			.map((p) -> new Point(p).toString())
+			.collect(Collectors.toList()));
 
 		extent = Similarity.extent(contoursByArea.get(0).getKey());
 		solidity = Similarity.solidity(contoursByArea.get(0).getKey());
 
-		return findBestMatch(extent, solidity);
+		System.out.println(String.format("solidity=%2.4f extent=%2.4f", solidity, extent));
+		Shape s = findBestMatch(extent, solidity);
+		if (s == null) {
+			MatOfInt patternHull = new MatOfInt();
+			MatOfPoint contour = contoursByArea.get(0).getKey();
+			Imgproc.convexHull(contour, patternHull);
+			double patternHullArea = Imgproc.contourArea(Similarity.pickPoints(contour, patternHull));
+			System.out.println(String.format("patternHullArea=%2.5f area=%2.5f area=%2.5f", patternHullArea, Imgproc
+				.contourArea(new MatOfPoint2f(contour.toArray())), Imgproc.contourArea(contour)));
+
+			Image.writeDebugImage(shapeImage, (Rect) null, "no_shape_det_raw_" + App.id);
+			Image.writeDebugImage(threshed, (Rect) null, "no_shape_det_threshed_" + App.id);
+			Image.writeDebugImage(edges, (Rect) null, "no_shape_det_edges_" + App.id);
+			Mat debugImageRect = shapeImage.clone();
+			Image.writeDebugImage(debugImageRect, contoursByArea.get(0).getValue(), "no_shape_det_raw_box_" + App.id);
+			System.out.println("N O   S H A P E   D E T E C T E D");
+		} else if (App.id.equals("xcard_8")) {
+			Image.writeDebugImage(threshed, (Rect) null, "wrong_shape_det_threshed_" + App.id);
+			Image.writeDebugImage(edges, (Rect) null, "wrong_shape_det_edges_" + App.id);
+		} else if (App.id.equals("card_15")) {
+			Mat debugImageRect = shapeImage.clone();
+
+			List<MatOfPoint> foo = new ArrayList<MatOfPoint>();
+			foo.add(contoursByArea.get(0).getKey());
+
+			Image.writeDebugImage(debugImageRect, foo, false, "good_shape_" + App.id);
+		}
+		return s;
 	}
 
 	/**
@@ -105,6 +142,12 @@ public class ShapeDetection {
 			boolean solidityWithinEpsilon = solidityDeviation < EPSILON;
 
 			if (extentWithinEpsilon && solidityWithinEpsilon) {
+				if (App.id.equals("cardx_8")) {
+					System.out.println(String
+						.format("prod=%2.5f vs pex=%2.3f psol=%2.3f ex=%2.3f sol=%2.3f shape=%s", (extentDeviation
+							* solidityDeviation), param.extent, param.solidity, extent, solidity, param.shape
+								.toString()));
+				}
 				matchedShapes.add(new AbstractMap.SimpleEntry<Double, Shape>(
 					// Use absolute value, we don't card in which direction we've deviated.
 					Math.abs(extentDeviation * solidityDeviation),

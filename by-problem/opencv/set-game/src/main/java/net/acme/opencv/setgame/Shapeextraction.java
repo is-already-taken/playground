@@ -12,6 +12,7 @@ import org.opencv.core.Rect;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import net.acme.opencv.setgame.debug.Image;
 import net.acme.opencv.setgame.utils.Correction;
 import net.acme.opencv.setgame.utils.Histogram;
 
@@ -21,7 +22,7 @@ import net.acme.opencv.setgame.utils.Histogram;
  */
 public class Shapeextraction {
 	// Shrink Npx from each side to remove possible card edges
-	private static final int SHRINK = 5;
+	private static final int SHRINK = 2;
 
 	// Gamma correct input image to improve contrast
 	// Higher is better - 1.2 is not enough, 1.5 is good
@@ -35,7 +36,7 @@ public class Shapeextraction {
 	private static final int MODE_DISTANCE = 30;
 
 	// Bounding box padding
-	private static final int PADDING = 3;
+	private static final int PADDING = 2;
 
 	// Fraction of the card area that shall be considered as shape
 	private static final double MIN_CARD_SCALE_FACTOR = 0.1;
@@ -84,8 +85,12 @@ public class Shapeextraction {
 		// implemented. It was removed though, since, during development,
 		// it did not produce better results.
 
+		// Image.writeDebugImage(threshed, (Rect) null, "shape_extraction_blob_" + App.id);
+
 		Imgproc.Canny(threshed, edges, 0, 255, 3);
 		Imgproc.findContours(edges, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+		// Image.writeDebugImage(edges, (Rect) null, "shape_extraction_edges_" + App.id);
 
 		int cardSize = subimg.rows() * subimg.cols();
 
@@ -98,10 +103,14 @@ public class Shapeextraction {
 
 		rects = normalizeRects(rects);
 
+		// Image.writeDebugImage(subimg, rects, "shape_extraction_normboxes_" + App.id);
+
 		int shapeCount = rects.size();
 
 		// Reject bad shape count
 		if (shapeCount < 1 || shapeCount > 3) {
+			// System.out.println("___________________ " + App.id);
+			// Image.writeDebugImage(subimg, rects, "shape_extraction_bad_box_count_" + App.id);
 			return null;
 		}
 
